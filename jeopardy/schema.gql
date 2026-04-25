@@ -1,0 +1,133 @@
+type Query {
+  boards(
+    filter: JeopardyBoardFilter = null
+    page: Int! = 1
+    total: Int! = 20
+  ): JeopardyBoardPage
+}
+
+type Mutation {
+  createBoard(data: JeopardyBoardData): CreateJeopardyBoardResult
+}
+
+type JeopardyBoardPage {
+  items: [JeopardyBoard!]!
+  meta: PageMetadata!
+}
+
+type PageMetadata {
+  totalItems: Int!
+  totalPages: Int!
+  currentPage: Int!
+  nextPage: Int
+  size: Int!
+}
+
+type CreateJeopardyBoardResult {
+  errors: [String!]!
+  data: JeopardyBoard
+}
+
+input JeopardyBoardFilter {
+  tags: [String!]
+  name: String
+  categories: String
+}
+
+input JeopardyBoardData {
+  """
+  Any extra metadata tags used to aggregate the boards in the UI. Are arbitrary but will group exact string matches together.
+  """
+  tags: [String!]!
+
+  """
+  Name of your board to be rendred in the UI when selecting.
+  """
+  name: String!
+
+  """
+  Categories that are rendered on the board, must contain at least three.
+  """
+  categories: [String!]!
+
+  """
+  Point totals that we allow for our questions, must contain at least two tiers.
+  """
+  pointTotals: [Int!]!
+
+  """
+  Questions to be Answered by Contestants must be equal to the categories.length x pointTotals.length. Will also reference the specific category/total that it fits into
+  """
+  questions: [QuestionCreate!]!
+}
+
+type JeopardyBoard {
+  id: ID!
+
+  """
+  Any extra metadata tags used to aggregate the boards in the UI. Are arbitrary but will group exact string matches together.
+  """
+  tags: [String!]!
+
+  """
+  Name of your board to be rendred in the UI when selecting.
+  """
+  name: String!
+
+  """
+  Categories that are rendered on the board, must contain at least three.
+  """
+  categories: [String!]!
+
+  """
+  Point totals that we allow for our questions, must contain at least two tiers.
+  """
+  pointTotals: [Int!]!
+
+  """
+  Questions to be Answered by Contestants must be equal to the categories.length x pointTotals.length. Will also reference the specific category/total that it fits into
+  """
+  questions: [Question!]!
+}
+
+input QuestionCreate {
+  """
+  The text to render for the specific question
+  """
+  text: String!
+  """
+  The actual text answer we will check against lowercased.
+  """
+  answer: String!
+
+  """
+  The index in the parent board's categories array.
+  """
+  categoryIndex: Int!
+
+  """
+  The index in the parent board's pointTotals array.
+  """
+  pointIndex: Int!
+}
+
+type Question {
+  """
+  The text to render for the specific question
+  """
+  text: String!
+  """
+  The actual text answer we will check against lowercased.
+  """
+  answer: String!
+
+  """
+  The index in the parent board's categories array.
+  """
+  categoryIndex: Int!
+
+  """
+  The index in the parent board's pointTotals array.
+  """
+  pointIndex: Int!
+}
