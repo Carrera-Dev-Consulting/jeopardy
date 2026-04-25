@@ -4,7 +4,7 @@ build-backend = "pdm.backend"
 
 
 [project]
-name = "zombie_nomnom_api"
+name = "jeopardy-cdc"
 dynamic = ["version"]
 description = "An API for the zombie-nomnom pypi package exposing functionality via a graphql api."
 readme = "README.md"
@@ -33,7 +33,6 @@ classifiers = [
 keywords = ["game", "api", "dice"]
 
 dependencies = [
-    "zombie-nomnom >= 1.1.1",
     "click >= 8.1.7",
     "fastapi >= 0.115.0",
     "uvicorn >= 0.31.1",
@@ -51,8 +50,8 @@ Issues = "https://github.com/carrera-dev-consulting/zombie-nomnom-api/issues"
 Changelog = "https://github.com/carrera-dev-consulting/zombie-nomnom-api/releases"
 
 [project.scripts]
-zombie-nomnom-api = "zombie_nomnom_api.app:main"
+jeopardy = "jeopardy:__main__"
 
 [tool.pdm]
-version = { source = "scm", tag_regex = "^(\\d+\\.){2}\\d+$" }
+version = { source = "scm", tag_regex = "^(?P<version>(\\d+\\.){2}\\d+)$", fallback_version = "0.0.0"}
 distribution = true
