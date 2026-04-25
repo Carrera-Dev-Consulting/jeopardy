@@ -1,0 +1,50 @@
+#@ load("@ytt:data", "data")
+#@ app_name = "{}-{}".format(data.values.base_app_name, data.values.env)
+#@ namespace = "{}-{}".format(data.values.base_namespace, data.values.env)
+#@ image = "gxldcptrick/zombie-nomnom-api:{}".format(data.values.image)
+#@ log_level = data.values.log_level
+#@ replicas = data.values.replicas
+#@ deployment_name = "{}-deployment".format(app_name)
+#@ cpu = data.values.cpu
+#@ memory = data.values.memory
+#@ port = data.values.port
+
+#@ def labels():
+app: #@ app_name
+#@ end
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: #@ namespace
+  name: #@ deployment_name
+  labels: #@ labels()
+spec:
+  metadata:
+    namespace: #@ namespace
+  replicas: #@ replicas
+  selector:
+    matchLabels: #@ labels()
+  template:
+    metadata:
+      namespace: #@ namespace
+      labels: #@ labels()
+    spec:
+      containers:
+        - name: #@ app_name
+          image: #@ image
+          resources:
+            limits:
+              cpu: #@ cpu
+              memory: #@ memory
+          env:
+            - name: LOG_LEVEL
+              value: #@ log_level
+            - name: LOG_FORMAT
+              value: pretty
+          entrypoint:
+            - "zombie-nomnom-api"
+            - "--port"
+            -  #@ port
+            - "--host"
+            - "0.0.0.0"

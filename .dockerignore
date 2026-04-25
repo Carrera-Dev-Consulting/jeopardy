@@ -1,0 +1,18 @@
+.coverage
+.coveragerc
+htmlcov/
+docs/
+.vscode/
+.venv/
+.pytest_cache/
+.github/
+CHANGELOG.md
+CODE_OF_CONDUCT.md
+CODEOWNERS
+CONTRIBUTING.md
+coverage.xml
+Dockerfile
+LICENSE
+pull_request_template.md
+# README.md
+SECURITY.md

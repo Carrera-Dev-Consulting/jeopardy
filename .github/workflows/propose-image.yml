@@ -1,0 +1,72 @@
+name: Propose Image Deployment
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version we are marking this release as
+        required: true
+      env:
+        description: Env to deploy too
+        type: choice
+        options:
+          - dev
+          - prod
+env:
+  FILE_NAME: zombie-nomnom-api-${{github.event.inputs.env}}.yaml
+jobs:
+  build-deployment-yaml:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Check if version is valid
+        shell: bash
+        run: |
+          if [ $(git tag -l "${{ github.event.inputs.version }}") ]; then
+              echo "Valid version"
+          else
+              echo "Invalid version ${{ github.event.inputs.version }}"
+              exit 1
+          fi
+      - uses: carvel-dev/setup-action@v2
+        with:
+          only: ytt
+      - name: Build deployment yaml
+        run: |
+          ytt -v image="${{ github.event.inputs.version }}"  -f deployment/lib/schema.yaml -f deployment/envs/${{ github.event.inputs.env }}/values.yaml -f deployment/deployment.yaml -f deployment/ingress.yaml -f deployment/namespace.yaml -f deployment/service.yaml > deployment.yaml
+      - name: Save deployment yaml as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-yaml
+          path: deployment.yaml
+  open-pr-with-yaml:
+    runs-on: ubuntu-latest
+    needs: build-deployment-yaml
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          repository: ${{ vars.FLUX_REPO }}
+          token: ${{ secrets.FLUX_REPO_TOKEN }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: deployment-yaml
+          path: deployment-yaml
+      - name: Create or Replace ${{ env.FILE_NAME }}
+        run: |
+          mv deployment-yaml/deployment.yaml ${{ vars.MAIN_CLUSTER_PATH }}/${{ env.FILE_NAME }}
+          rm -r deployment-yaml
+          git status
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.FLUX_REPO_TOKEN }}
+          base: main
+          commit-message: Updating ${{ env.FILE_NAME }} to version ${{ github.event.inputs.version }}
+          draft: false
+          labels: automated,deployment
+          branch: update-zombie-nomnom-api-${{github.event.inputs.env}}-${{ github.event.inputs.version }}
+          title: "deployment(zombie-nomnom-api):  ${{ github.event.inputs.version }}"

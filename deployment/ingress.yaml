@@ -1,0 +1,24 @@
+#@ load("@ytt:data", "data")
+
+#@ app_name = "{}-{}".format(data.values.base_app_name, data.values.env)
+#@ namespace = "{}-{}".format(data.values.base_namespace, data.values.env)
+#@ port = data.values.port
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: #@ namespace
+  name: #@ app_name
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: #@ app_name
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: #@ app_name
+                port:
+                  number: #@ port

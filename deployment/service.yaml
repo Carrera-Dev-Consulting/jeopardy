@@ -1,0 +1,17 @@
+#@ load("@ytt:data", "data")
+
+#@ port = data.values.port
+#@ app_name = "{}-{}".format(data.values.base_app_name, data.values.env)
+#@ namespace = "{}-{}".format(data.values.base_namespace, data.values.env)
+---
+kind: Service
+apiVersion: v1
+metadata:
+  namespace: #@ namespace
+  name: #@ app_name
+spec:
+  type: LoadBalancer
+  selector:
+    app: #@ app_name
+  ports:
+    - port: #@ port

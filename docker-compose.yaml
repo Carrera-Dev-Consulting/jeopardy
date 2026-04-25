@@ -1,0 +1,23 @@
+services:
+  dev:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: deploy
+    ports: 
+    - 5000:5000
+    volumes:
+    - .:/app
+    environment:
+      MONGO_CONNECTION: ${MONGO_CONNECTION:-mongodb://mongo:27017/zombie_nomnom}
+      GAME_COLLECTION_NAME: ${GAME_COLLECTION:-NAME~games}
+      GAME_MAKER_TYPE: ${GAME_MAKER_TYPE:-mongo}
+    depends_on:
+      - mongo
+  mongo:
+    hostname: mongo
+    image: mongo:8.0.0
+    ports:
+      - 27017:27017
+    volumes:
+      - ./database/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro

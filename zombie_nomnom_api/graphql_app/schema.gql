@@ -1,0 +1,189 @@
+
+type Query {
+    """
+    games query can be called to retrieve either a list of all games or a game that matches an ID.
+    """
+    games(id: ID): [Game!]!
+}
+
+type Mutation {
+
+    """
+    Creates a new game requires at least one player to start the game.
+
+    A string array is required each string will create a player for the game.
+    """
+    createGame(players: [String!]!): GameResult!
+
+
+    """
+    When drawDice is called it will pull three dice and return the rolled results of the dice for the current player. 
+
+    A gameId is required to drawDice
+    """
+    drawDice(gameId: ID!) : RoundResult!
+
+    """
+    endRound is used to end the current players turn. All points will be calculated and all dice will be returned into the bag.
+
+    A gameId is required to end round
+    """
+    endRound(gameId: ID!) : RoundResult!
+}
+
+"""
+A game that is being currently or has previously been played.
+"""
+type GameResult {
+    """
+    A representation of the zombie nom nom game.
+    """
+    game: Game
+
+    """
+    List of any errors if the game can't be found or something goes wrong
+    """
+    errors: [String!]!
+}
+
+"""
+The result of a round.
+"""
+type RoundResult {
+
+    """
+    A round that has been played
+    """
+    round: Round,
+
+    """
+    List of any errors if the game can't be found or something goes wrong
+    """
+    errors: [String!]!
+}
+
+"""
+Represents a zombie dice game object.
+"""
+type Game {
+    id: ID!
+    moves: [Move!]!
+    players: [Player!]!
+    round: Round
+    gameOver: Boolean!
+    winner: Player
+}
+
+"""
+Represents a singular round in the zombie dice game.
+"""
+type Round {
+
+    """
+    The player that played a round
+    """
+    player: Player!
+
+    """
+    The DieBag that was being used for the round
+    """
+    bag: DieBag!
+
+    """
+    The amount of points gained from the round
+    """
+    points: Int!
+
+    """
+    A true/false value if a round has ended
+    """
+    ended: Boolean
+}
+
+"""
+The bag holding all dice and dice that have been drawn.
+"""
+type DieBag {
+
+    """
+    A list of die that are currently in the bag
+    """
+    dice: [Die!]!
+
+    """
+    A list of die that have already been drawn and will not be used when pulling dice from the bag.
+    """
+    drawnDice: [Die!]!
+}
+
+"""
+A player that is playing the game
+"""
+type Player {
+    """
+    The players unique identifier
+    """
+    id: ID!
+    """
+    The name of the player
+    """
+    name: String!
+    """
+    The current players score
+    """
+    score: Int!
+    """
+    Dice the current player has in hand
+    """
+    hand: [Die!]!
+}
+
+"""
+An object representation of a die
+"""
+type Die {
+    """
+    All faces that are on the die
+    """
+    sides: [DieFace!]!
+    """
+    The face the current die landed on
+    """
+    currentFace: DieFace
+    """
+    The color of the die
+    """
+    color: DieColor!
+}
+
+"""
+An enum representing the possible colors of the die
+"""
+enum DieColor {
+    RED
+    GREEN
+    YELLOW
+}
+
+"""
+The faces that are possible on a die
+"""
+enum DieFace {
+    BRAIN
+    SHOTGUN
+    FOOT
+}
+
+"""
+An action a player has taken in the game
+"""
+type Move {
+    """
+    The name of the action taken
+    """
+    name: String!
+    """
+    The player that initiated the action.
+    """
+    player: Player
+}

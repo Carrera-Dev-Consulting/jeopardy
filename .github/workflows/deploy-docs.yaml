@@ -1,0 +1,137 @@
+name: Test and Deploy Docs
+
+# build the documentation whenever there are new commits on main
+on:
+  push:
+    branches:
+      - main
+
+# security: restrict permissions for CI jobs.
+permissions:
+  contents: read
+
+jobs:
+  # Build the documentation and upload the static HTML files as an artifact.
+  build-pdoc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      # ADJUST THIS: install all dependencies (including pdoc)
+      - name: Install dependencies
+        shell: bash
+        run: |
+          pip install .
+          pip install -r requirements-dev.txt
+      - name: Build pdocs
+        shell: bash
+        run: |
+          make ensure-resources
+          make build-pdocs
+      - name: Upload pdoc artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdoc-docs
+          path: docs
+
+  test-with-coverage:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: |
+          pip install .
+          pip install -r requirements-dev.txt
+      - name: Lint Source
+        shell: bash
+        run: |
+          make lint
+      - name: Run all tests
+        run: |
+          make ensure-resources
+          make all-test
+      - name: Upload coverage report html
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: htmlcov
+      # Code Coverage Comment
+      - name: Coverage comment
+        id: coverage_comment
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Store Pull Request comment to be posted
+        uses: actions/upload-artifact@v4
+        if: steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true'
+        with:
+          # If you use a different name, update COMMENT_ARTIFACT_NAME accordingly
+          name: python-coverage-comment-action
+          # If you use a different name, update COMMENT_FILENAME accordingly
+          path: python-coverage-comment-action.txt
+
+  upload-pages-artifact:
+    needs:
+      - build-pdoc
+      - test-with-coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: pdoc-docs
+          path: pdoc-docs
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage-report
+      - name: Create Docs Package Dir
+        run: |
+          mv pdoc-docs docs
+          mv coverage-report docs/coverage
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/
+  # Deploy the artifact to GitHub pages.
+  # This is a separate job so that only actions/deploy-pages has the necessary permissions.
+  deploy:
+    needs: upload-pages-artifact
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+  release:
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - name: Git Version
+        id: version
+        uses: codacy/git-version@2.7.1
+      - uses: ncipollo/release-action@v1
+        with:
+          skipIfReleaseExists: true
+          prerelease: true
+          generateReleaseNotes: true
+          tag: ${{ steps.version.outputs.version }}

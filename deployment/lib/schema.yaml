@@ -1,0 +1,11 @@
+#@data/values-schema
+---
+env: env
+image: latest
+port: 5000
+base_namespace: zombie-nomnom
+base_app_name: zombie-nomnom-api
+log_level: INFO
+replicas: 1
+cpu: 1
+memory: 100Mi
